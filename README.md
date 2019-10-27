@@ -7,7 +7,9 @@ Encore is the bot that specifically handles Twitch requests and pipes them throu
 
 ## Setting Up In-Game
 
-To start receiving song requests on your Twitch channel, you must first connect your Twitch account to your Quaver account in-game. You can do so by pressing F9 and going to the song requests tab. Once connected, viewers will immediately be able to start sending requests.
+To start receiving song requests on your Twitch channel, you must first connect your Twitch account to your Quaver account in-game. 
+
+You can do so by pressing F9 and going to the song requests tab. Once connected, viewers will immediately be able to start sending requests.
 
 ## Requirements
 
