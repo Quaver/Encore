@@ -5,5 +5,12 @@ Song requests are a handy feature within Quaver. It allows both Twitch viewers a
 
 Encore is the bot that specifically handles Twitch requests and pipes them through to Albatross, our real-time game server, to alert online users when new requests are coming in.
 
+## Requirements
+
+* Node.js w/ a TypeScript compiler
+* MySQL
+* Redis
+* osu! API Key (Optional)
+
 # License
 The code in this repository is released and licensed under the [Mozilla Public License 2.0](). Please see the [LICENSE]() file for more information. In short, if you are making any modifications to this software, you **must** disclose the source code of the modified version of the file(s), and include the original copyright notice.
