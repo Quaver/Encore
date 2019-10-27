@@ -5,6 +5,10 @@ Song requests are a handy feature within Quaver. It allows both Twitch viewers a
 
 Encore is the bot that specifically handles Twitch requests and pipes them through to Albatross, our real-time game server, to alert online users when new requests are coming in.
 
+## Setting Up In-Game
+
+To start receiving song requests on your Twitch channel, you must first connect your Twitch account to your Quaver account in-game. You can do so by pressing F9 and going to the song requests tab. Once connected, viewers will immediately be able to start sending requests.
+
 ## Requirements
 
 * Node.js w/ a TypeScript compiler
