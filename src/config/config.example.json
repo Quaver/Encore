@@ -1,0 +1,23 @@
+{
+    "port": 8084,
+    "baseUrl": "http://localhost:8084",
+    "expressSessionSecret": "",
+    "twitch": {
+        "auth": {
+            "clientId": "",
+            "clientSecret": "",
+            "callbackUrl": ""
+        }
+    },
+    "databaseSql": {
+        "host": "",
+        "user": "",
+        "password": "",
+        "database": ""
+    },
+    "databaseRedis": {
+        "host": "localhost",
+        "port": 6379,
+        "password": ""
+    }
+}
