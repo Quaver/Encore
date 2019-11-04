@@ -1,0 +1,3 @@
+[submodule "src/Quaver.Server.API"]
+	path = src/Quaver.Server.API
+	url = https://github.com/Swan/Quaver.Server.API
