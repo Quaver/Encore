@@ -14,14 +14,11 @@ export default class Twitch {
             if (!req.user)
                 return res.redirect("/login");
 
-            if (req.user.twitch_id) {
-                res.status(200).json({
+            if (req.user.twitch_username) {
+                return res.status(200).json({
                     status: 200,
                     message: "Your Twitch account has been successfully connected to your Quaver account. You can close this page now!"
                 });
-
-                req.logout();
-                return;
             }
 
             return res.redirect("/auth/twitch");
@@ -41,8 +38,8 @@ export default class Twitch {
                 return res.redirect("/");
 
             passport.authenticate("twitch", async (err: any, user: any, info: any) => {
-                await SqlDatabase.Execute("UPDATE users SET twitch_id = ? WHERE id = ?", [user.data[0].id, req.user.id]);
-                Logger.Info(`Updated Twitch account for ${req.user.username} (#${req.user.id}) [${user.data[0].display_name} <${user.data[0].id}>]`);
+                await SqlDatabase.Execute("UPDATE users SET twitch_username = ? WHERE id = ?", [user.data[0].login, req.user.id]);
+                Logger.Info(`Updated Twitch account for ${req.user.username} (#${req.user.id}) [${user.data[0].login} <${user.data[0].id}>]`);
 
                 res.redirect("/checktwitch");
             })(req, res, next);

@@ -7,6 +7,10 @@
             "clientId": "",
             "clientSecret": "",
             "callbackUrl": ""
+        },
+        "bot": {
+            "username": "",
+            "oauth": ""
         }
     },
     "databaseSql": {
