@@ -15,6 +15,7 @@ export default class Twitch {
             if (!req.user)
                 return res.redirect("/login");
 
+                
             if (req.user.twitch_username) {
                 return res.status(200).json({
                     status: 200,
@@ -44,6 +45,12 @@ export default class Twitch {
 
                 // Join the user's Twitch channel
                 Encore.Instance.Bot.join(`${user.data[0].login}`);
+
+                // Publish twitch connection to redis, so Albatross can take care of alerting the user
+                Encore.Instance.RedisClient.publish("quaver:twitch_connection", JSON.stringify({
+                    user_id: req.user.id,
+                    twitch_username: user.data[0].login
+                }));
 
                 res.redirect("/checktwitch");
             })(req, res, next);

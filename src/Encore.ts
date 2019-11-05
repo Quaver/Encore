@@ -259,6 +259,7 @@ export default class Encore {
             const redisMessage = {
                 user_id: userCheck[0].id,
                 request: {
+                    twitch_username: user.username,
                     game: request.MapGame,
                     map_id: request.MapId,
                     mapset_id: request.MapsetId,
