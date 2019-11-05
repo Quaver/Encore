@@ -271,8 +271,6 @@ export default class Encore {
                 }
             };
 
-            console.log(redisMessage);
-
             this.RedisClient.publish(`quaver:song_requests`, JSON.stringify(redisMessage), () => Logger.Success(`Successfully published @${user.username}'s request ` + 
                 `for ${userCheck[0].username} (#${userCheck[0].id}) to Redis.`));
 
