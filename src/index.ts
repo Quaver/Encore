@@ -8,9 +8,7 @@ export default class Program {
      * Main Execution Point
      */
     public static async Main(): Promise<void> {
-        await RedisHelper.Initialize(config.databaseRedis);
         await SqlDatabase.Initialize(config.databaseSql.host, config.databaseSql.user, config.databaseSql.password, config.databaseSql.database, 10);
-
         new Encore();
     }
 }

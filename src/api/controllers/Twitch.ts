@@ -1,6 +1,7 @@
 import Logger from "../../Quaver.Server.API/src/utils/Logger";
 import Responses from "../../Quaver.Server.API/src/utils/Responses";
 import SqlDatabase from "../../Quaver.Server.API/src/utils/database/sql/SqlDatabase";
+import Encore from "../../Encore";
 const passport = require('passport');
 
 export default class Twitch {
@@ -40,6 +41,9 @@ export default class Twitch {
             passport.authenticate("twitch", async (err: any, user: any, info: any) => {
                 await SqlDatabase.Execute("UPDATE users SET twitch_username = ? WHERE id = ?", [user.data[0].login, req.user.id]);
                 Logger.Info(`Updated Twitch account for ${req.user.username} (#${req.user.id}) [${user.data[0].login} <${user.data[0].id}>]`);
+
+                // Join the user's Twitch channel
+                Encore.Instance.Bot.join(`${user.data[0].login}`);
 
                 res.redirect("/checktwitch");
             })(req, res, next);
