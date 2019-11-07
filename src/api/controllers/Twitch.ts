@@ -40,6 +40,9 @@ export default class Twitch {
                 return res.redirect("/");
 
             passport.authenticate("twitch", async (err: any, user: any, info: any) => {
+                if (!user)
+                    return res.redurect("/checktwitch");
+                    
                 await SqlDatabase.Execute("UPDATE users SET twitch_username = ? WHERE id = ?", [user.data[0].login, req.user.id]);
                 Logger.Info(`Updated Twitch account for ${req.user.username} (#${req.user.id}) [${user.data[0].login} <${user.data[0].id}>]`);
 
