@@ -40,22 +40,26 @@ export default class Twitch {
                 return res.redirect("/");
 
             passport.authenticate("twitch", async (err: any, user: any, info: any) => {
-                if (!user)
-                    return res.redurect("/checktwitch");
-                    
-                await SqlDatabase.Execute("UPDATE users SET twitch_username = ? WHERE id = ?", [user.data[0].login, req.user.id]);
-                Logger.Info(`Updated Twitch account for ${req.user.username} (#${req.user.id}) [${user.data[0].login} <${user.data[0].id}>]`);
+                try {
+                    if (!user)
+                        return Responses.Return500(req, res);
 
-                // Join the user's Twitch channel
-                Encore.Instance.Bot.join(`${user.data[0].login}`);
-
-                // Publish twitch connection to redis, so Albatross can take care of alerting the user
-                Encore.Instance.RedisClient.publish("quaver:twitch_connection", JSON.stringify({
-                    user_id: req.user.id,
-                    twitch_username: user.data[0].login
-                }));
-
-                res.redirect("/checktwitch");
+                    await SqlDatabase.Execute("UPDATE users SET twitch_username = ? WHERE id = ?", [user.data[0].login, req.user.id]);
+                    Logger.Info(`Updated Twitch account for ${req.user.username} (#${req.user.id}) [${user.data[0].login} <${user.data[0].id}>]`);
+    
+                    // Join the user's Twitch channel
+                    Encore.Instance.Bot.join(`${user.data[0].login}`);
+    
+                    // Publish twitch connection to redis, so Albatross can take care of alerting the user
+                    Encore.Instance.RedisClient.publish("quaver:twitch_connection", JSON.stringify({
+                        user_id: req.user.id,
+                        twitch_username: user.data[0].login
+                    }));
+    
+                    res.redirect("/checktwitch");
+                } catch (err) {
+                    Logger.Error(err);
+                }
             })(req, res, next);
 
         } catch (err) {
