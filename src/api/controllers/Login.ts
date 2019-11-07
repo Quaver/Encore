@@ -53,6 +53,7 @@ export default class Login {
 
             profile.accessToken = accessToken;
             profile.refreshToken = refreshToken;
+            console.log(profile);
         
             next(null, profile);
           }
