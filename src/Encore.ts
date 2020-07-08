@@ -33,12 +33,12 @@ export default class Encore {
     /**
      * The URL for an individual Quaver Map
      */
-    private QuaverMap: string = "https://quavergame.com/mapsets/map/";
+    private QuaverMap: string = "https://quavergame.com/mapset/map/";
 
     /**
      * The URL for a Quaver Mapset
      */
-    private QuaverMapset: string = "https://quavergame.com/mapsets/";
+    private QuaverMapset: string = "https://quavergame.com/mapset/";
 
     /**
      * The URL for a "new" osu! beatmap link
