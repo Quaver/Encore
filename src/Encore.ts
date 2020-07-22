@@ -1,12 +1,12 @@
 import API from "./api/API";
 import Logger from "./Quaver.Server.API/src/utils/Logger";
 import SqlDatabase from "./Quaver.Server.API/src/utils/database/sql/SqlDatabase";
-import ModeHelper from "./Quaver.Server.API/src/utils/ModeHelper";
-import GameMode from "./Quaver.Server.API/src/enums/GameMode";
 import SongRequest from "./SongRequest";
 import Game from "./Game";
-import { RedisClient } from "redis";
+import {RedisClient} from "redis";
 import * as redis from "redis";
+import JoinTask from "./JoinTask";
+
 const axios = require("axios");
 const TwitchBot = require("twitch-bot");
 const config = require("./config/config.json");
@@ -18,7 +18,7 @@ export default class Encore {
     /**
      * The API server for this instance of encore
      */
-    private API : API
+    private API: API
 
     /**
      * The Twitch bot instance
@@ -42,7 +42,7 @@ export default class Encore {
 
     /**
      * The URL for a "new" osu! beatmap link
-     * 
+     *
      * Full Version: https://osu.ppy.sh/beatmapsets/<beatmapset_id>#mania/<beatmap_id>
      */
     private OsuBeatmap: string = "https://osu.ppy.sh/beatmapsets/";
@@ -66,9 +66,9 @@ export default class Encore {
             channels: []
         })
 
-
         this.Bot.on("connected", async () => await this.JoinChannels());
         this.Bot.on("join", async (channel: string) => await this.OnJoin(channel));
+        this.Bot.on("part", async (channel: string) => await this.OnPart(channel));
         this.Bot.on("error", async (err: any) => await this.OnError(err));
         this.Bot.on("message", async (user: any) => await this.OnMessage(user));
     }
@@ -77,46 +77,58 @@ export default class Encore {
      * Joins the Twitch chats of all connected users
      */
     private async JoinChannels(): Promise<void> {
-        const result = await SqlDatabase.Execute("SELECT twitch_username FROM users WHERE twitch_username IS NOT NULL", []);
-  
-        Logger.Info(`Attempting to join ${result.length} Twitch chat channels...`);
+        const interval = 60 * 1000; // 60 sec
 
-        for (let i = 0; i < result.length; i++)
-            this.Bot.join(result[i].twitch_username);
+        // Start loop
+        while (true) {
+            await JoinTask.Start();
+            await JoinTask.Sleep(interval);
+        }
     }
 
     /**
      * Called when the user has joined the Twitch channel
-     * @param channel 
+     * @param channel
      */
     private async OnJoin(channel: string): Promise<void> {
-        Logger.Info(`Successfullly joined channel: ${channel}`);
+        Logger.Info(`Successfully joined channel: ${channel}`);
+    }
+
+    /**
+     * Called when the user has part the Twitch channel
+     * @param channel
+     */
+    private async OnPart(channel: string): Promise<void> {
+        Logger.Info(`Successfully part channel: ${channel}`);
     }
 
     /**
      * Called when receiving a message in the Twitch channel
-     * @param user 
+     * @param user
      */
     private async OnMessage(user: any): Promise<void> {
         // Quaver Map (Individual)
-        if (user.message.startsWith(this.QuaverMap))
+        if (user.message.startsWith(`!r ${this.QuaverMap}`))
             return await this.HandleQuaverMapRequest(user);
         // Quaver Mapset (Full Set)
-        else if (user.message.startsWith(this.QuaverMapset))
+        else if (user.message.startsWith(`!r ${this.QuaverMapset}`))
             return await this.HandleQuaverMapsetRequest(user);
         // New osu! beatmap set
-        else if (config.osuApiKey && user.message.startsWith(this.OsuBeatmap))
+        else if (config.osuApiKey && user.message.startsWith(`!r ${this.OsuBeatmap}`))
             return await this.HandleOsuBeatmapSetRequest(user);
-        else if (config.osuApiKey && user.message.startsWith(this.OsuBeatmapOld))
+        else if (config.osuApiKey && user.message.startsWith(`!r ${this.OsuBeatmapOld}`))
             return await this.HandleOsuBeatmapOld(user);
         // Old osu! beatmap set (unsupported)
         else if (config.osuApiKey && user.message.startsWith("https://osu.ppy.sh/s/"))
             return this.Bot.say(`@${user.username} /s/ links are not supported. Please use /b/ links or the new osu! website to request.`, user.channel);
+        // Help command
+        else if (user.message.startsWith("!help"))
+            return this.Bot.say(`@${user.username} to request a song use !r link`, user.channel);
     }
 
     /**
      * Handles when users request an individual Quaver map
-     * @param user 
+     * @param user
      */
     private async HandleQuaverMapRequest(user: any): Promise<void> {
         try {
@@ -127,16 +139,16 @@ export default class Encore {
 
             const result = await SqlDatabase.Execute("SELECT * FROM maps WHERE id = ? LIMIT 1", [mapId]);
 
-            if (result.length == 0) 
+            if (result.length == 0)
                 return this.Bot.say(`@${user.username} the map you have tried to request could not be found.`);
 
             const map = result[0];
 
-            const msg: string = `@${user.username} has requested map: ${map.artist} - ${map.title} [${map.difficulty_name}] ` + 
-                                `(${map.difficulty_rating.toFixed(2)}) by ${map.creator_username}`;
+            const msg: string = `@${user.username} has requested map: ${map.artist} - ${map.title} [${map.difficulty_name}] ` +
+                `(${map.difficulty_rating.toFixed(2)}) by ${map.creator_username}`;
 
-            await this.PublishRequest(user, new SongRequest(Game.Quaver, map.id, map.mapset_id, map.md5, map.artist, map.title, 
-                                                map.difficulty_name, map.creator_username, map.difficulty_rating));
+            await this.PublishRequest(user, new SongRequest(Game.Quaver, map.id, map.mapset_id, map.md5, map.artist, map.title,
+                map.difficulty_name, map.creator_username, map.difficulty_rating));
 
             this.Bot.say(`${msg}. ${this.QuaverMap}${map.id}`, user.channel);
             Logger.Info(`${msg} to: ${user.channel}`);
@@ -149,7 +161,7 @@ export default class Encore {
 
     /**
      * Handles when a user requests an entire Quaver mapset
-     * @param user 
+     * @param user
      */
     private async HandleQuaverMapsetRequest(user: any): Promise<void> {
         try {
@@ -167,7 +179,7 @@ export default class Encore {
 
             const msg: string = `@${user.username} has requested mapset: ${mapset.artist} - ${mapset.title} by ${mapset.creator_username}`;
 
-            
+
             await this.PublishRequest(user, new SongRequest(Game.Quaver, -1, mapset.id, null, mapset.artist, mapset.title, null, mapset.creator_username, 0));
 
             this.Bot.say(`${msg}. ${this.QuaverMapset}${mapset.id}`, user.channel);
@@ -180,16 +192,17 @@ export default class Encore {
 
     /**
      * Handles when users request an osu! beatmap from the new website
-     * @param user 
+     * @param user
      */
     private async HandleOsuBeatmapSetRequest(user: any): Promise<void> {
         try {
-            const regex = /^https:\/\/osu.ppy.sh\/beatmapsets\/[0-9]+#mania\/([0-9]+)/g;
+
+            const regex = /https:\/\/osu.ppy.sh\/beatmapsets\/[0-9]+#mania\/([0-9]+)/g;
             const match = regex.exec(user.message);
 
             if (!match)
                 return this.Bot.say(`@${user.username} the link you provided was not valid.`);
-            
+
             const mapId = match[1];
             await this.HandleOsuBeatmap(user, mapId);
 
@@ -201,7 +214,7 @@ export default class Encore {
 
     /**
      * Handles when a user requests an osu! beatmap from the old website
-     * @param user 
+     * @param user
      */
     private async HandleOsuBeatmapOld(user: any): Promise<void> {
         try {
@@ -220,8 +233,8 @@ export default class Encore {
 
     /**
      * Handles the request for an individual osu! beatmap (/b/id)
-     * @param user 
-     * @param mapId 
+     * @param user
+     * @param mapId
      */
     private async HandleOsuBeatmap(user: any, mapId: any): Promise<void> {
         try {
@@ -229,12 +242,12 @@ export default class Encore {
             const response = await axios.get(endpoint);
             const map = response.data[0];
 
-            const msg = `@${user.username} has requested map: ${map.artist} - ${map.title} [${map.version}] ` + 
-                        `(${parseFloat(map.difficultyrating).toFixed(2)}) by ${map.creator}`;
-                  
+            const msg = `@${user.username} has requested map: ${map.artist} - ${map.title} [${map.version}] ` +
+                `(${parseFloat(map.difficultyrating).toFixed(2)}) by ${map.creator}`;
+
 
             await this.PublishRequest(user, new SongRequest(Game.Osu, map.beatmap_id, map.beatmapset_id, map.file_md5, map.artist,
-                                                    map.title, map.version, map.creator, parseFloat(map.difficultyrating)));
+                map.title, map.version, map.creator, parseFloat(map.difficultyrating)));
 
             this.Bot.say(`${msg}. https://osu.ppy.sh/b/${mapId}`, user.channel);
             Logger.Info(`${msg} to ${user.channel}`);
@@ -272,7 +285,7 @@ export default class Encore {
                 }
             };
 
-            this.RedisClient.publish(`quaver:song_requests`, JSON.stringify(redisMessage), () => Logger.Success(`Successfully published @${user.username}'s request ` + 
+            this.RedisClient.publish(`quaver:song_requests`, JSON.stringify(redisMessage), () => Logger.Success(`Successfully published @${user.username}'s request ` +
                 `for ${userCheck[0].username} (#${userCheck[0].id}) to Redis.`));
 
         } catch (err) {
@@ -283,7 +296,7 @@ export default class Encore {
 
     /**
      * Called when an error has occurred with the bot
-     * @param err 
+     * @param err
      */
     private async OnError(err: any): Promise<void> {
         Logger.Error(err);
